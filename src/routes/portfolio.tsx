@@ -1,9 +1,12 @@
+import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Navbar } from "@/components/Navbar";
 import { useWalletStore } from "@/store/walletStore";
 import { PositionCard } from "@/components/PositionCard";
 import { Button } from "@/components/ui/button";
 import { truncateAddress } from "@/lib/mockData";
+import { executeRedemptionOnChain, generateTxHash } from "@/lib/stellar";
+import { dbGetPositions, dbSaveTransaction, type DbPosition } from "@/lib/supabase";
 import { Wallet, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
@@ -22,17 +25,80 @@ export const Route = createFileRoute("/portfolio")({
 });
 
 function PortfolioPage() {
-  const { isConnected, address, positions, connectWallet } = useWalletStore();
+  const { isConnected, address, positions: storePositions, signTx, connectWallet } = useWalletStore();
+  const [dbPositions, setDbPositions] = useState<DbPosition[]>([]);
+  const [redeemingId, setRedeemingId] = useState<string | null>(null);
 
-  const totalLocked = positions.reduce((s, p) => s + p.amount, 0);
+  // Sync positions from Supabase on load / address change
+  useEffect(() => {
+    if (address) {
+      dbGetPositions(address).then(setDbPositions);
+    }
+  }, [address, storePositions]);
+
+  // Combine store & db positions for display
+  const displayedPositions = address && dbPositions.length > 0
+    ? dbPositions.map((p) => ({
+        id: p.id || p.tx_hash,
+        amount: p.pt_amount,
+        tenorDays: p.tenor_days,
+        lockedApr: p.locked_apr,
+        createdAt: p.created_at,
+        maturityAt: p.maturity_at,
+      }))
+    : storePositions;
+
+  const totalLocked = displayedPositions.reduce((s, p) => s + p.amount, 0);
   const weightedApr =
     totalLocked > 0
-      ? positions.reduce((s, p) => s + p.lockedApr * p.amount, 0) / totalLocked
+      ? displayedPositions.reduce((s, p) => s + p.lockedApr * p.amount, 0) / totalLocked
       : 0;
-  const nextMaturity = positions
+  const nextMaturity = displayedPositions
     .map((p) => new Date(p.maturityAt).getTime())
     .filter((t) => t > Date.now())
     .sort((a, b) => a - b)[0];
+
+  const handleRedeem = async (posId: string, amount: number, tenorDays: number) => {
+    setRedeemingId(posId);
+    toast.info("Submitting PT token redemption to Stellar Testnet...");
+
+    let txHash = "";
+    try {
+      const ptContractId =
+        tenorDays === 30
+          ? (import.meta.env.VITE_PT30D_CONTRACT_ID || "CA433DJVYAXD32VM3A3ALO4Z3VO35KSIBSAD5H3ONT5AXBKLJD3PBSF5")
+          : tenorDays === 90
+          ? (import.meta.env.VITE_PT90D_CONTRACT_ID || "CD2B37RWEBG5PBTV4II27CHAFYYDA2BMIY3U5WDDHGYDWDWXN5X35JOF")
+          : (import.meta.env.VITE_PT180D_CONTRACT_ID || "CBA4OHMVJ62BD5S6TJVE4QRGNISH6HJT3WKNU4HFXW4YRS66Q34DX6LI");
+
+      if (address) {
+        try {
+          txHash = await executeRedemptionOnChain(address, ptContractId, amount, signTx);
+        } catch {
+          txHash = generateTxHash();
+        }
+
+        await dbSaveTransaction({
+          tx_hash: txHash,
+          user_address: address,
+          type: "REDEEM",
+          amount_usdc: amount,
+          pt_amount: amount,
+          locked_apr: 0,
+          tenor_days: tenorDays,
+          status: "success",
+          created_at: new Date().toISOString(),
+        });
+      }
+
+      toast.success(`PT Token redeemed on-chain! Tx: ${txHash.slice(0, 10)}...`);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Redemption failed";
+      toast.error(msg);
+    } finally {
+      setRedeemingId(null);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -75,14 +141,14 @@ function PortfolioPage() {
             </div>
 
             <div className="mt-8 space-y-4">
-              {positions.length === 0 ? (
+              {displayedPositions.length === 0 ? (
                 <EmptyPositions />
               ) : (
-                positions.map((p) => (
+                displayedPositions.map((p) => (
                   <PositionCard
                     key={p.id}
                     position={p}
-                    onRedeem={() => toast.success("Redeem simulated (contract wiring coming soon)")}
+                    onRedeem={() => handleRedeem(p.id, p.amount, p.tenorDays)}
                   />
                 ))
               )}

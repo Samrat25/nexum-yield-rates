@@ -15,7 +15,6 @@ import {
   signTransaction,
 } from "@stellar/freighter-api";
 import { analytics } from "@/lib/analytics";
-import { mockConnectWallet } from "@/lib/stellar";
 import { NETWORK_PASSPHRASE } from "@/lib/constants";
 
 // ─── Position type (persists in store after intent execution) ─────────────────
@@ -96,15 +95,14 @@ export const useWalletStore = create<WalletState>((set, get) => ({
       console.warn("[wallet] Freighter not found — using mock wallet");
       window.open("https://freighter.app", "_blank");
 
-      const { address, balance } = await mockConnectWallet();
       set({
         isConnected: true,
-        address,
-        balance,
+        address: "GAXXWXQRZL7NRCVU6YFPZM4CJHVGDTQ7WHJDBZ4CXQZ7VJK3D3M7HXPL",
+        balance: 1000,
         connecting: false,
         isMock: true,
       });
-      analytics.wallet_connected(address);
+      analytics.wallet_connected("GAXXWXQRZL7NRCVU6YFPZM4CJHVGDTQ7WHJDBZ4CXQZ7VJK3D3M7HXPL");
     } catch (err) {
       console.error("[wallet] Connection error:", err);
       set({ connecting: false });
