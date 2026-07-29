@@ -154,11 +154,12 @@ export async function executeXLMSwapAndMintOnChain(
 ): Promise<string> {
   const account = await server.getAccount(userAddress);
   const routerContractId = CONTRACT_IDS.intent_router || "CAD5WJIEMPUHRJGTE6ATJPEAVDDD3QNNPXZMU2E4AO4ZVK5DH73Q5MRF";
-  const vaultId = CONTRACT_IDS.vault || "CDWUAGLEHR7DMWX5LLND24OOBJBALUIIBGA6CMI7XQ3OZ5CGEOXIZFES";
+  // Must use valid Stellar G-address for classic Operation.payment destination
+  const protocolTreasuryAddress = "GABL4JMQZVMBJRZLGLIIEVGWXJ3GOPKA3JF6QOUIQHGSGF24I4D5HJV7";
 
-  // Operation 1: Payment of XLM to Protocol Vault (drives real balance deduction!)
+  // Operation 1: Payment of XLM to Protocol Vault Treasury (valid G-address)
   const paymentOp = Operation.payment({
-    destination: vaultId,
+    destination: protocolTreasuryAddress,
     asset: Asset.native(),
     amount: xlmAmount.toFixed(7),
   });
