@@ -210,16 +210,16 @@ export async function executeXLMSwapAndMintOnChain(
 /** Fetch real-time XLM -> USDC market conversion rate from Horizon DEX */
 export async function getXLMToUSDCRate(): Promise<number> {
   try {
-    const url = `${HORIZON_URL}/orderbook?selling_asset_type=native&buying_asset_type=credit_alphanum4&buying_asset_code=USDC&buying_asset_issuer=CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA`;
+    const url = `${HORIZON_URL}/orderbook?selling_asset_type=native&buying_asset_type=credit_alphanum4&buying_asset_code=USDC&buying_asset_issuer=GBBD47IF6LWK2P7MDEVSCWR7DPCCM3GHSC3VMWFRIUVEPXMTHFLWAKXM`;
     const res = await fetch(url);
-    if (!res.ok) throw new Error("Horizon request failed");
+    if (!res.ok) return 0.125;
     const data = await res.json();
     if (data.bids && data.bids.length > 0) {
       const bestBidPrice = parseFloat(data.bids[0].price);
       if (bestBidPrice > 0) return bestBidPrice;
     }
   } catch {
-    // Horizon orderbook estimation
+    // Horizon fallback estimation
   }
   return 0.125;
 }

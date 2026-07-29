@@ -145,9 +145,9 @@ export async function dbGetTransactions(userAddress: string): Promise<DbTransact
 
 /** Record quote request in Supabase for analytics & telemetry */
 export async function dbSaveQuote(quote: DbQuote): Promise<void> {
-  if (SUPABASE_URL.includes("placeholder")) return;
+  if (!SUPABASE_URL || SUPABASE_URL.includes("placeholder")) return;
   try {
-    await supabase.from("quotes").insert([
+    const { error } = await supabase.from("quotes").insert([
       {
         user_address: quote.user_address,
         input_asset: quote.input_asset,
@@ -159,7 +159,10 @@ export async function dbSaveQuote(quote: DbQuote): Promise<void> {
         achievable: quote.achievable,
       },
     ]);
-  } catch (err) {
-    console.warn("[supabase] error logging quote:", err);
+    if (error && error.code !== "PGRST205") {
+      // Ignore missing table error silently
+    }
+  } catch {
+    // Silent catch
   }
 }

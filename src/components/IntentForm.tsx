@@ -69,7 +69,8 @@ export function IntentForm() {
   quoteRef.current = quote;
 
   useEffect(() => {
-    if (usdcEquivalentAmount > 0) {
+    if (usdcEquivalentAmount <= 0) return;
+    const timer = setTimeout(() => {
       analytics.track("intent_quoted", { amount: usdcEquivalentAmount, tenor, targetApr, asset });
       if (address) {
         dbSaveQuote({
@@ -84,7 +85,8 @@ export function IntentForm() {
           created_at: new Date().toISOString(),
         });
       }
-    }
+    }, 1500);
+    return () => clearTimeout(timer);
   }, [usdcEquivalentAmount, tenor, targetApr, asset, address, rawAmountNum, quote.impliedApr, quote.ptReceived]);
 
   // Check real on-chain balance
