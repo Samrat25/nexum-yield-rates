@@ -8,24 +8,25 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import {
   computeQuote,
-  generateTxHash,
   executeIntentOnChain,
+  executeXLMSwapAndMintOnChain,
   getXLMToUSDCRate,
   type Quote,
 } from "@/lib/stellar";
+import { runLangGraphMarketAnalysis } from "@/lib/marketAgent";
 import { dbSavePosition, dbSaveTransaction, dbSaveQuote } from "@/lib/supabase";
 import { analytics } from "@/lib/analytics";
 import { QuoteDisplay } from "./QuoteDisplay";
 import { TxModal, type TxState } from "./TxModal";
 import { toast } from "sonner";
-import { ArrowLeftRight, Sparkles } from "lucide-react";
+import { ArrowLeftRight, Sparkles, TrendingUp, Cpu } from "lucide-react";
 
 const TENORS = [30, 90, 180] as const;
 type Tenor = (typeof TENORS)[number];
 type Asset = "USDC" | "XLM";
 
 export function IntentForm() {
-  const { isConnected, address, balance, signTx, addPosition } = useWalletStore();
+  const { isConnected, address, balance, xlmBalance, signTx, addPosition, refreshBalances } = useWalletStore();
   const [asset, setAsset] = useState<Asset>("USDC");
   const [amount, setAmount] = useState("");
   const [tenor, setTenor] = useState<Tenor>(90);
@@ -36,10 +37,11 @@ export function IntentForm() {
   const [txState, setTxState] = useState<TxState>({ status: "idle" });
   const pending = txState.status === "pending";
 
-  // Fetch live XLM -> USDC market conversion rate from Stellar DEX / Horizon
+  // Fetch real-time XLM -> USDC market rate and refresh account balances
   useEffect(() => {
     getXLMToUSDCRate().then(setXlmRate);
-  }, []);
+    if (isConnected) refreshBalances();
+  }, [isConnected, refreshBalances]);
 
   // Live quote tick refresh
   useEffect(() => {
@@ -49,8 +51,13 @@ export function IntentForm() {
   }, [pending]);
 
   const rawAmountNum = Number(amount) || 0;
-  // Convert XLM input to effective USDC amount if XLM selected
   const usdcEquivalentAmount = asset === "XLM" ? rawAmountNum * xlmRate : rawAmountNum;
+
+  // Run LangGraph AI Market Analysis Engine
+  const marketInsight = useMemo(
+    () => runLangGraphMarketAnalysis(xlmRate, 15.2, targetApr),
+    [xlmRate, targetApr],
+  );
 
   const quote = useMemo(
     () => computeQuote(usdcEquivalentAmount, tenor, targetApr),
@@ -80,7 +87,9 @@ export function IntentForm() {
     }
   }, [usdcEquivalentAmount, tenor, targetApr, asset, address, rawAmountNum, quote.impliedApr, quote.ptReceived]);
 
-  const canExecute = isConnected && rawAmountNum > 0 && (asset === "USDC" ? rawAmountNum <= balance : true);
+  // Check real on-chain balance
+  const activeBalance = asset === "USDC" ? balance : xlmBalance;
+  const hasSufficientBalance = isConnected && rawAmountNum > 0 && rawAmountNum <= activeBalance;
 
   const execute = useMutation({
     mutationFn: async () => {
@@ -89,75 +98,79 @@ export function IntentForm() {
       const lockedTenor = tenor;
       setTxState({ status: "pending" });
 
-      let hash = "";
-      try {
-        // Real Soroban Intent Execution on Stellar Testnet if wallet connected
-        if (isConnected && address) {
-          try {
-            hash = await executeIntentOnChain(
-              address,
-              lockedUsdcAmount,
-              Math.round(targetApr * 100),
-              lockedTenor,
-              signTx,
-            );
-          } catch (err: unknown) {
-            // Fallback for simulation / mock mode fallback hash
-            const errmsg = err instanceof Error ? err.message : String(err);
-            console.warn("[Soroban] Execution notice:", errmsg);
-            hash = generateTxHash();
-          }
-        } else {
-          hash = generateTxHash();
-        }
-
-        const executedApr = lockedQuote.impliedApr;
-        const ptContractId =
-          lockedTenor === 30
-            ? (import.meta.env.VITE_PT30D_CONTRACT_ID || "CA433DJVYAXD32VM3A3ALO4Z3VO35KSIBSAD5H3ONT5AXBKLJD3PBSF5")
-            : lockedTenor === 90
-            ? (import.meta.env.VITE_PT90D_CONTRACT_ID || "CD2B37RWEBG5PBTV4II27CHAFYYDA2BMIY3U5WDDHGYDWDWXN5X35JOF")
-            : (import.meta.env.VITE_PT180D_CONTRACT_ID || "CBA4OHMVJ62BD5S6TJVE4QRGNISH6HJT3WKNU4HFXW4YRS66Q34DX6LI");
-
-        // Save position to Supabase backend
-        if (address) {
-          await dbSavePosition({
-            user_address: address,
-            pt_token_id: ptContractId,
-            tenor_days: lockedTenor,
-            pt_amount: lockedQuote.ptReceived,
-            locked_apr: executedApr,
-            tx_hash: hash,
-            maturity_at: lockedQuote.maturityDate,
-            status: "active",
-            created_at: new Date().toISOString(),
-          });
-
-          await dbSaveTransaction({
-            tx_hash: hash,
-            user_address: address,
-            type: asset === "XLM" ? "SWAP_XLM_MINT" : "MINT_INTENT",
-            amount_usdc: lockedUsdcAmount,
-            amount_xlm: asset === "XLM" ? rawAmountNum : undefined,
-            pt_amount: lockedQuote.ptReceived,
-            locked_apr: executedApr,
-            tenor_days: lockedTenor,
-            status: "success",
-            created_at: new Date().toISOString(),
-          });
-        }
-
-        return {
-          hash,
-          amount: lockedUsdcAmount,
-          tenorDays: lockedTenor,
-          executedApr,
-          maturityAt: lockedQuote.maturityDate,
-        };
-      } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : "Execution failed";
-        throw new Error(msg);
+      if (!isConnected || !address) {
+        throw new Error("Please connect your Freighter wallet first.");
       }
+
+      let hash = "";
+      if (asset === "XLM") {
+        // REAL XLM PAYMENT & SWAP: Deducts XLM from user's balance on-chain and prompts Freighter for signature!
+        toast.info("Please approve the XLM Payment & PT Minting transaction in your Freighter wallet.");
+        hash = await executeXLMSwapAndMintOnChain(
+          address,
+          rawAmountNum,
+          Math.round(targetApr * 100),
+          lockedTenor,
+          signTx,
+        );
+      } else {
+        // REAL USDC SOROBAN INTENT CONTRACT CALL: Prompts Freighter for signature!
+        toast.info("Please approve the Soroban Intent Execution in your Freighter wallet.");
+        hash = await executeIntentOnChain(
+          address,
+          lockedUsdcAmount,
+          Math.round(targetApr * 100),
+          lockedTenor,
+          signTx,
+        );
+      }
+
+      const executedApr = lockedQuote.impliedApr;
+      const ptContractId =
+        lockedTenor === 30
+          ? (import.meta.env.VITE_PT30D_CONTRACT_ID || "CA433DJVYAXD32VM3A3ALO4Z3VO35KSIBSAD5H3ONT5AXBKLJD3PBSF5")
+          : lockedTenor === 90
+          ? (import.meta.env.VITE_PT90D_CONTRACT_ID || "CD2B37RWEBG5PBTV4II27CHAFYYDA2BMIY3U5WDDHGYDWDWXN5X35JOF")
+          : (import.meta.env.VITE_PT180D_CONTRACT_ID || "CBA4OHMVJ62BD5S6TJVE4QRGNISH6HJT3WKNU4HFXW4YRS66Q34DX6LI");
+
+      // Save position & transaction record to Supabase
+      if (address) {
+        await dbSavePosition({
+          user_address: address,
+          pt_token_id: ptContractId,
+          tenor_days: lockedTenor,
+          pt_amount: lockedQuote.ptReceived,
+          locked_apr: executedApr,
+          tx_hash: hash,
+          maturity_at: lockedQuote.maturityDate,
+          status: "active",
+          created_at: new Date().toISOString(),
+        });
+
+        await dbSaveTransaction({
+          tx_hash: hash,
+          user_address: address,
+          type: asset === "XLM" ? "SWAP_XLM_MINT" : "MINT_INTENT",
+          amount_usdc: lockedUsdcAmount,
+          amount_xlm: asset === "XLM" ? rawAmountNum : undefined,
+          pt_amount: lockedQuote.ptReceived,
+          locked_apr: executedApr,
+          tenor_days: lockedTenor,
+          status: "success",
+          created_at: new Date().toISOString(),
+        });
+      }
+
+      // Refresh on-chain balance
+      await refreshBalances();
+
+      return {
+        hash,
+        amount: lockedUsdcAmount,
+        tenorDays: lockedTenor,
+        executedApr,
+        maturityAt: lockedQuote.maturityDate,
+      };
     },
     onSuccess: (res) => {
       setTxState({
@@ -182,7 +195,7 @@ export function IntentForm() {
         lockedApr: res.executedApr,
         txHash: res.hash,
       });
-      toast.success(`Rate locked on-chain at ${res.executedApr.toFixed(2)}% APR.`);
+      toast.success(`On-chain transaction confirmed! Rate locked at ${res.executedApr.toFixed(2)}% APR.`);
     },
     onError: (err: Error) => {
       setTxState({ status: "error", message: err.message });
@@ -218,7 +231,7 @@ export function IntentForm() {
                 asset === "XLM" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground",
               )}
             >
-              <Sparkles className="h-3 w-3" /> XLM Auto-Swap
+              <Sparkles className="h-3 w-3" /> XLM Direct Payment
             </button>
           </div>
         </div>
@@ -227,11 +240,11 @@ export function IntentForm() {
           <div>
             <div className="flex items-center justify-between">
               <Label className="text-xs uppercase tracking-wider text-muted-foreground">
-                {asset === "USDC" ? "USDC Deposit Amount" : "XLM Input Amount"}
+                {asset === "USDC" ? "USDC Deposit Amount" : "XLM Payment Amount"}
               </Label>
               {asset === "XLM" && (
-                <span className="text-xs text-muted-foreground">
-                  Rate: 1 XLM = {xlmRate.toFixed(4)} USDC
+                <span className="text-xs text-muted-foreground font-mono">
+                  1 XLM ≈ {xlmRate.toFixed(4)} USDC
                 </span>
               )}
             </div>
@@ -249,24 +262,31 @@ export function IntentForm() {
             </div>
 
             {asset === "XLM" && rawAmountNum > 0 && (
-              <div className="mt-2 flex items-center gap-2 rounded-md border border-primary/20 bg-primary/5 p-2 text-xs text-primary">
+              <div className="mt-2 flex items-center gap-2 rounded-md border border-primary/20 bg-primary/5 p-2.5 text-xs text-primary">
                 <ArrowLeftRight className="h-3.5 w-3.5" />
                 <span>
-                  Swaps on Stellar DEX to ~<strong>{usdcEquivalentAmount.toFixed(2)} USDC</strong> to mint PT
+                  Will deduct <strong>{rawAmountNum.toFixed(2)} XLM</strong> from your wallet on-chain $\rightarrow$ converts to ~<strong>{usdcEquivalentAmount.toFixed(2)} USDC</strong> to mint PT
                 </span>
               </div>
             )}
 
             <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
               <span>
-                Balance:{" "}
-                <span className="tabular text-foreground/80">
-                  {isConnected ? (asset === "USDC" ? `${balance.toFixed(2)} USDC` : "Available") : "—"}
+                Real On-Chain Balance:{" "}
+                <span className="tabular font-semibold text-foreground">
+                  {isConnected
+                    ? asset === "USDC"
+                      ? `${balance.toFixed(2)} USDC`
+                      : `${xlmBalance.toFixed(2)} XLM`
+                    : "0.00"}
                 </span>
               </span>
-              {isConnected && asset === "USDC" && (
-                <button onClick={() => setAmount(String(balance))} className="text-primary hover:underline font-medium">
-                  Max Balance
+              {isConnected && (
+                <button
+                  onClick={() => setAmount(String(asset === "USDC" ? balance : Math.max(0, xlmBalance - 2)))}
+                  className="text-primary hover:underline font-medium"
+                >
+                  Use Max
                 </button>
               )}
             </div>
@@ -311,13 +331,20 @@ export function IntentForm() {
             </div>
           </div>
 
-          <div className="rounded-md border border-border bg-background/60 p-3 text-xs text-muted-foreground">
-            <span className="font-medium text-foreground">Soroban Rate-or-Revert</span> — transaction automatically reverts on-chain if market rate drops below your target.
+          {/* LangGraph AI Intelligence Card */}
+          <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 text-xs space-y-1.5">
+            <div className="flex items-center gap-1.5 font-semibold text-primary">
+              <Cpu className="h-3.5 w-3.5" />
+              <span>LangGraph Market Intelligence Engine</span>
+            </div>
+            <p className="text-muted-foreground text-[11px] leading-relaxed">
+              {marketInsight.aiAnalysisSummary}
+            </p>
           </div>
 
           <Button
             size="lg"
-            disabled={!canExecute || execute.isPending}
+            disabled={!hasSufficientBalance || execute.isPending}
             onClick={() => execute.mutate()}
             className="w-full h-12 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-60 glow-primary font-semibold"
           >
@@ -325,9 +352,11 @@ export function IntentForm() {
               ? "Connect Wallet to Trade"
               : rawAmountNum <= 0
               ? "Enter Amount"
+              : rawAmountNum > activeBalance
+              ? `Insufficient ${asset} Balance (${activeBalance.toFixed(2)} ${asset} available)`
               : execute.isPending
-              ? "Executing On-Chain…"
-              : `Execute ${asset} Intent`}
+              ? "Approve in Freighter..."
+              : `Execute ${asset} On-Chain Intent`}
           </Button>
         </div>
       </section>
