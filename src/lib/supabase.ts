@@ -143,26 +143,13 @@ export async function dbGetTransactions(userAddress: string): Promise<DbTransact
   }
 }
 
-/** Record quote request in Supabase for analytics & telemetry */
+/** Record quote request in local telemetry mirror for analytics & telemetry */
 export async function dbSaveQuote(quote: DbQuote): Promise<void> {
-  if (!SUPABASE_URL || SUPABASE_URL.includes("placeholder")) return;
   try {
-    const { error } = await supabase.from("quotes").insert([
-      {
-        user_address: quote.user_address,
-        input_asset: quote.input_asset,
-        input_amount: quote.input_amount,
-        target_apr: quote.target_apr,
-        tenor_days: quote.tenor_days,
-        implied_apr: quote.implied_apr,
-        pt_amount: quote.pt_amount,
-        achievable: quote.achievable,
-      },
-    ]);
-    if (error && error.code !== "PGRST205") {
-      // Ignore missing table error silently
-    }
+    const existing = JSON.parse(localStorage.getItem("nexum_quotes") || "[]");
+    existing.unshift(quote);
+    localStorage.setItem("nexum_quotes", JSON.stringify(existing.slice(0, 50)));
   } catch {
-    // Silent catch
+    // Ignore local storage error
   }
 }
