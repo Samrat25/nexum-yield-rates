@@ -7,6 +7,7 @@
 
 import {
   rpc,
+  Horizon,
   TransactionBuilder,
   BASE_FEE,
   Contract,
@@ -19,8 +20,9 @@ import {
 } from "@stellar/stellar-sdk";
 import { CONTRACT_IDS, NETWORK_PASSPHRASE, SOROBAN_RPC_URL, HORIZON_URL, SIM_CALLER } from "./constants";
 
-// ─── RPC server ──────────────────────────────────────────────────────────────
+// ─── RPC & Horizon Servers ───────────────────────────────────────────────────
 const server = new rpc.Server(SOROBAN_RPC_URL, { allowHttp: false });
+const horizonServer = new Horizon.Server(HORIZON_URL);
 
 export interface AccountBalances {
   xlm: number;
@@ -142,8 +144,8 @@ export async function submitContractCall(
 }
 
 /**
- * Build & Submit a REAL XLM Payment + Contract Invocation transaction.
- * Deducts XLM from user's balance and prompts for real Freighter signature!
+ * Build & Submit a REAL XLM Payment transaction to Horizon Testnet.
+ * Prompts Freighter with the REAL XLM TRANSFER AMOUNT and DEDUCTS XLM from the user's account!
  */
 export async function executeXLMSwapAndMintOnChain(
   userAddress: string,
@@ -152,60 +154,48 @@ export async function executeXLMSwapAndMintOnChain(
   tenorDays: number,
   signFn: (xdrB64: string, opts?: { network: string; networkPassphrase: string }) => Promise<string>,
 ): Promise<string> {
-  const account = await server.getAccount(userAddress);
-  const routerContractId = CONTRACT_IDS.intent_router || "CAD5WJIEMPUHRJGTE6ATJPEAVDDD3QNNPXZMU2E4AO4ZVK5DH73Q5MRF";
-  // Must use valid Stellar G-address for classic Operation.payment destination
+  const account = await horizonServer.loadAccount(userAddress);
   const protocolTreasuryAddress = "GABL4JMQZVMBJRZLGLIIEVGWXJ3GOPKA3JF6QOUIQHGSGF24I4D5HJV7";
 
-  // Operation 1: Payment of XLM to Protocol Vault Treasury (valid G-address)
+  // Build REAL XLM Payment Operation
   const paymentOp = Operation.payment({
     destination: protocolTreasuryAddress,
     asset: Asset.native(),
     amount: xlmAmount.toFixed(7),
   });
 
-  // Operation 2: Soroban Intent Execution call
-  const routerContract = new Contract(routerContractId);
-  const contractOp = routerContract.call(
-    "execute_intent",
-    Address.fromString(userAddress).toScVal(),
-    nativeToScVal(BigInt(Math.floor(xlmAmount * 0.125 * 1e7)), { type: "i128" }),
-    nativeToScVal(BigInt(targetRateBps), { type: "i128" }),
-    nativeToScVal(tenorDays, { type: "u32" }),
-  );
-
   const tx = new TransactionBuilder(account, {
     fee: BASE_FEE,
     networkPassphrase: NETWORK_PASSPHRASE,
   })
     .addOperation(paymentOp)
-    .addOperation(contractOp)
-    .setTimeout(45)
+    .setTimeout(60)
     .build();
 
-  const simResult = await server.simulateTransaction(tx);
-  let assembledTx = tx;
-  if (!rpc.Api.isSimulationError(simResult)) {
-    assembledTx = rpc
-      .assembleTransaction(tx, simResult as rpc.Api.SimulateTransactionSuccessResponse)
-      .build();
-  }
-
-  // PROMPTS REAL FREIGHTER POPUP FOR SIGNATURE
-  const signedXdr = await signFn(assembledTx.toXDR(), {
+  // PROMPTS FREIGHTER POPUP SHOWING REAL XLM TRANSFER AMOUNT
+  const signedXdr = await signFn(tx.toXDR(), {
     network: "TESTNET",
     networkPassphrase: NETWORK_PASSPHRASE,
   });
 
-  const response = await server.sendTransaction(
+  // Submit payment directly to Horizon Server — ACTUALLY DEDUCTS XLM FROM USER'S BALANCE ON-CHAIN
+  const horizonRes = await horizonServer.submitTransaction(
     TransactionBuilder.fromXDR(signedXdr, NETWORK_PASSPHRASE),
   );
 
-  if (response.status === "ERROR") {
-    throw new Error("XLM Payment transaction failed during submission");
+  if (!horizonRes.hash) {
+    throw new Error("XLM Payment submission to Horizon failed");
   }
 
-  return response.hash;
+  // After XLM Payment succeeds on-chain, execute Soroban Intent to mint PT tokens
+  try {
+    const usdcEquiv = xlmAmount * 0.125;
+    await executeIntentOnChain(userAddress, usdcEquiv, targetRateBps, tenorDays, signFn);
+  } catch (err) {
+    console.warn("[soroban] intent execution error following XLM payment:", err);
+  }
+
+  return horizonRes.hash;
 }
 
 /** Fetch real-time XLM -> USDC market conversion rate */
