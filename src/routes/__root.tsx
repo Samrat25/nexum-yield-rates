@@ -11,6 +11,7 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { initAnalytics } from "../lib/analytics";
 import { Toaster } from "sonner";
 
 function NotFoundComponent() {
@@ -114,9 +115,39 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
+  useEffect(() => {
+    initAnalytics();
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <Outlet />
+      <footer className="border-t border-border mt-16">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-4 py-8 sm:flex-row">
+          <p className="text-xs text-muted-foreground">© 2026 Nexum Protocol · Built on Stellar Soroban</p>
+          <div className="flex items-center gap-4">
+            <a
+              href="https://github.com/Samrat25/nexum-protocol"
+              target="_blank"
+              rel="noreferrer"
+              className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+            >
+              GitHub
+            </a>
+            <a
+              href="https://stellar.org"
+              target="_blank"
+              rel="noreferrer"
+              className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Stellar
+            </a>
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-3 py-1 text-xs">
+              <span className="h-1.5 w-1.5 rounded-full bg-primary" /> Testnet
+            </span>
+          </div>
+        </div>
+      </footer>
       <Toaster
         theme="dark"
         position="bottom-right"

@@ -1,7 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { ShieldCheck, Lock, Zap, ArrowRight, Github } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
+import { getVaultTVL, getVaultAPY } from "@/lib/stellar";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -25,6 +27,9 @@ export const Route = createFileRoute("/")({
 });
 
 function HomePage() {
+  const { data: tvl = 0 }     = useQuery({ queryKey: ["tvl"], queryFn: getVaultTVL, staleTime: 10_000, refetchInterval: 15_000 });
+  const { data: apy = 15.2 }  = useQuery({ queryKey: ["apy"], queryFn: getVaultAPY, staleTime: 10_000, refetchInterval: 15_000 });
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -70,9 +75,9 @@ function HomePage() {
       {/* Stats */}
       <section className="mx-auto max-w-6xl px-4 py-16">
         <div className="grid gap-4 sm:grid-cols-3">
-          <StatCard label="Total Value Locked" value="$0" hint="Testnet · placeholder" />
-          <StatCard label="Current Vault APY" value="15.2%" hint="Updated 30s ago" accent />
-          <StatCard label="Active Positions" value="0" hint="Across all users" />
+          <StatCard label="Total Value Locked" value={`$${tvl.toLocaleString(undefined, { maximumFractionDigits: 0 })}`} hint="USDC locked in vault" />
+          <StatCard label="Current Vault APY" value={`${apy.toFixed(1)}%`} hint="7-day rolling average" accent />
+          <StatCard label="Active Positions" value="—" hint="On Stellar Testnet" />
         </div>
       </section>
 

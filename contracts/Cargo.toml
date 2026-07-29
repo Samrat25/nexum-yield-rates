@@ -1,0 +1,6 @@
+[workspace]
+members = ["vault", "pt_token", "intent_router"]
+resolver = "2"
+
+[workspace.dependencies]
+soroban-sdk = { version = "21.7.6", features = ["testutils"] }
