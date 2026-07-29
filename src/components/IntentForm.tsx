@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useWalletStore } from "@/store/walletStore";
 import { Button } from "@/components/ui/button";
@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
-import { computeQuote } from "@/lib/stellar";
+import { computeQuote, generateTxHash, simulateExecution, type Quote } from "@/lib/stellar";
 import { analytics } from "@/lib/analytics";
 import { QuoteDisplay } from "./QuoteDisplay";
 import { TxModal, type TxState } from "./TxModal";
@@ -23,12 +23,14 @@ export function IntentForm() {
   const [tick, setTick] = useState(0);
 
   const [txState, setTxState] = useState<TxState>({ status: "idle" });
+  const pending = txState.status === "pending";
 
-  // Live quote — recompute every 3s
+  // Live quote — recompute every 3s, frozen while a transaction is in flight
   useEffect(() => {
+    if (pending) return;
     const id = setInterval(() => setTick((t) => t + 1), 3000);
     return () => clearInterval(id);
-  }, []);
+  }, [pending]);
 
   const amountNum = Number(amount) || 0;
   const quote = useMemo(
@@ -36,6 +38,10 @@ export function IntentForm() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [amountNum, tenor, targetApr, tick],
   );
+
+  // Always read the freshest quote inside the async mutation.
+  const quoteRef = useRef<Quote>(quote);
+  quoteRef.current = quote;
 
   useEffect(() => {
     if (amountNum > 0) analytics.track("intent_quoted", { amount: amountNum, tenor, targetApr });
@@ -46,33 +52,61 @@ export function IntentForm() {
 
   const execute = useMutation({
     mutationFn: async () => {
+      // Lock the quote the user is looking at, then broadcast.
+      const locked = quoteRef.current;
+      const lockedAmount = amountNum;
+      const lockedTenor = tenor;
       setTxState({ status: "pending" });
       await new Promise((r) => setTimeout(r, 1600));
-      if (!achievable) throw new Error("Achieved APR fell below target. Intent reverted.");
-      const hash = "0x" + Math.random().toString(16).slice(2, 10) + Math.random().toString(16).slice(2, 10);
-      return { hash };
+
+      const { executedApr, reverted } = simulateExecution(locked, targetApr);
+      if (reverted) {
+        throw new Error(
+          `Settled APR ${executedApr.toFixed(2)}% fell below your ${targetApr.toFixed(
+            1,
+          )}% target. Intent reverted — no funds moved.`,
+        );
+      }
+
+      return {
+        hash: generateTxHash(),
+        amount: lockedAmount,
+        tenorDays: lockedTenor,
+        executedApr,
+        maturityAt: locked.maturityDate,
+      };
     },
-    onSuccess: ({ hash }) => {
-      setTxState({ status: "success", hash });
+    onSuccess: (res) => {
+      setTxState({
+        status: "success",
+        hash: res.hash,
+        summary: {
+          amount: res.amount,
+          apr: res.executedApr,
+          tenorDays: res.tenorDays,
+          maturityAt: res.maturityAt,
+        },
+      });
       addPosition({
-        amount: amountNum,
-        tenorDays: tenor,
-        lockedApr: quote.impliedApr,
-        maturityAt: quote.maturityDate,
+        amount: res.amount,
+        tenorDays: res.tenorDays,
+        lockedApr: res.executedApr,
+        maturityAt: res.maturityAt,
       });
       analytics.track("intent_executed", {
-        amount: amountNum,
-        tenor,
-        lockedApr: quote.impliedApr,
-        txHash: hash,
+        amount: res.amount,
+        tenor: res.tenorDays,
+        lockedApr: res.executedApr,
+        txHash: res.hash,
       });
-      toast.success("Intent executed. Rate locked.");
+      toast.success(`Rate locked at ${res.executedApr.toFixed(2)}% APR.`);
     },
     onError: (err: Error) => {
       setTxState({ status: "error", message: err.message });
       toast.error(err.message);
     },
   });
+
 
   return (
     <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
