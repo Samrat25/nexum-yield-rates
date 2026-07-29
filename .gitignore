@@ -30,3 +30,10 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Rust / Soroban contract build artifacts
+contracts/target/
+contracts/libs/
+contracts/*.def
+contracts/Cargo.lock
+
