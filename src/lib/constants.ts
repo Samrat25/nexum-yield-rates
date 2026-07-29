@@ -5,11 +5,11 @@ export const HORIZON_URL = "https://horizon-testnet.stellar.org";
 
 // ─── Contract IDs (populated from .env.local after deployment) ───────────────
 export const CONTRACT_IDS = {
-  vault:         import.meta.env.VITE_VAULT_ID         ?? "",
-  pt_30d:        import.meta.env.VITE_PT30D_ID         ?? "",
-  pt_90d:        import.meta.env.VITE_PT90D_ID         ?? "",
-  pt_180d:       import.meta.env.VITE_PT180D_ID        ?? "",
-  intent_router: import.meta.env.VITE_ROUTER_ID        ?? "",
+  vault:         import.meta.env.VITE_VAULT_CONTRACT_ID  ?? import.meta.env.VITE_VAULT_ID  ?? "",
+  pt_30d:        import.meta.env.VITE_PT30D_CONTRACT_ID  ?? import.meta.env.VITE_PT30D_ID  ?? "",
+  pt_90d:        import.meta.env.VITE_PT90D_CONTRACT_ID  ?? import.meta.env.VITE_PT90D_ID  ?? "",
+  pt_180d:       import.meta.env.VITE_PT180D_CONTRACT_ID ?? import.meta.env.VITE_PT180D_ID ?? "",
+  intent_router: import.meta.env.VITE_ROUTER_CONTRACT_ID ?? import.meta.env.VITE_ROUTER_ID ?? "",
 };
 
 // ─── Tenor mapping ────────────────────────────────────────────────────────────

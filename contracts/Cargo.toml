@@ -3,4 +3,14 @@ members = ["vault", "pt_token", "intent_router"]
 resolver = "2"
 
 [workspace.dependencies]
-soroban-sdk = { version = "21.7.6", features = ["testutils"] }
+soroban-sdk = "21.7.6"
+
+[profile.release]
+opt-level = "z"
+overflow-checks = true
+debug = false
+strip = "symbols"
+debug-assertions = false
+panic = "abort"
+codegen-units = 1
+lto = true
