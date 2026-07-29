@@ -7,15 +7,17 @@
  */
 
 import { create } from "zustand";
-import {
-  isConnected as freighterIsConnected,
-  getAddress,
-  isAllowed,
-  requestAccess,
-  signTransaction,
-} from "@stellar/freighter-api";
+import freighterPkg from "@stellar/freighter-api";
 import { analytics } from "@/lib/analytics";
 import { NETWORK_PASSPHRASE } from "@/lib/constants";
+
+// Handles CJS default export resolution across SSR and Client environments
+const freighter = (freighterPkg as unknown as { default?: typeof freighterPkg }).default ?? freighterPkg;
+const freighterIsConnected = freighter.isConnected;
+const getAddress = freighter.getAddress;
+const isAllowed = freighter.isAllowed;
+const requestAccess = freighter.requestAccess;
+const signTransaction = freighter.signTransaction;
 
 // ─── Position type (persists in store after intent execution) ─────────────────
 export interface Position {
