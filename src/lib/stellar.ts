@@ -34,9 +34,11 @@ export const horizonServer = new Horizon.Server(HORIZON_URL);
 // Protocol treasury (deployer keypair G-address) receives all payments
 const PROTOCOL_TREASURY = "GABL4JMQZVMBJRZLGLIIEVGWXJ3GOPKA3JF6QOUIQHGSGF24I4D5HJV7";
 
-// USDC asset on Testnet (Circle-issued)
+// USDC asset on Testnet (Circle-issued) — lazy so it never runs at SSR module-eval time
 const USDC_TESTNET_ISSUER = "GBBD47IF6LWK2P7MDEVSCWR7DPCCM3GHSC3VMWFRIUVEPXMTHFLWAKXM";
-const USDC_ASSET = new Asset("USDC", USDC_TESTNET_ISSUER);
+function getUsdcAsset() {
+  return new Asset("USDC", USDC_TESTNET_ISSUER);
+}
 
 export interface AccountBalances {
   xlm: number;
@@ -93,7 +95,7 @@ export async function executeMintOnChain(
         })
       : Operation.payment({
           destination: PROTOCOL_TREASURY,
-          asset: USDC_ASSET,
+          asset: getUsdcAsset(),
           amount: amount.toFixed(7),
         });
 
