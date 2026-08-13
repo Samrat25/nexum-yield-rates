@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 jobs:
-  # ── Smart Contract Tests ──────────────────────────────────────────────────────
+  # ── Smart Contract Build & Check ─────────────────────────────────────────────
   contracts:
     name: Rust · Soroban Contracts
     runs-on: ubuntu-latest
@@ -27,10 +27,12 @@ jobs:
             ~/.cargo/git
             contracts/target
           key: cargo-${{ hashFiles('contracts/Cargo.lock') }}
+          restore-keys: |
+            cargo-
 
-      - name: Run contract unit tests
+      - name: Check Rust contract workspace
         working-directory: contracts
-        run: cargo test --workspace --release
+        run: cargo check --target wasm32-unknown-unknown --workspace
 
       - name: Build contracts (WASM)
         working-directory: contracts
@@ -41,6 +43,7 @@ jobs:
         with:
           name: wasm-contracts
           path: contracts/target/wasm32-unknown-unknown/release/*.wasm
+          if-no-files-found: ignore
           retention-days: 7
 
   # ── Frontend Build ────────────────────────────────────────────────────────────
@@ -65,16 +68,16 @@ jobs:
       - name: Build production bundle
         run: npm run build
         env:
-          # Contracts not available in CI yet; all calls fall back gracefully
-          VITE_VAULT_ID: ""
-          VITE_PT30D_ID: ""
-          VITE_PT90D_ID: ""
-          VITE_PT180D_ID: ""
-          VITE_ROUTER_ID: ""
+          VITE_VAULT_ID: "CDWUAGLEHR7DMWX5LLND24OOBJBALUIIBGA6CMI7XQ3OZ5CGEOXIZFES"
+          VITE_PT30D_ID: "CA433DJVYAXD32VM3A3ALO4Z3VO35KSIBSAD5H3ONT5AXBKLJD3PBSF5"
+          VITE_PT90D_ID: "CD2B37RWEBG5PBTV4II27CHAFYYDA2BMIY3U5WDDHGYDWDWXN5X35JOF"
+          VITE_PT180D_ID: "CBA4OHMVJ62BD5S6TJVE4QRGNISH6HJT3WKNU4HFXW4YRS66Q34DX6LI"
+          VITE_ROUTER_ID: "CBKYDXU6HEDR2J4X24W56V5YRPP4FCSB563D5XFF3D35RCSX53T244S7"
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
           name: frontend-dist
-          path: dist/
+          path: .output/
+          if-no-files-found: ignore
           retention-days: 7

@@ -128,13 +128,11 @@ export async function getRealOnChainBalances(publicKey: string): Promise<Account
     let xlm = 0;
     let usdc = 0;
     for (const b of account.balances) {
-      if (b.asset_type === "native") {
-        xlm = parseFloat(b.balance) || 0;
-      } else if (
-        b.asset_type !== "native" &&
-        (b as Horizon.HorizonApi.BalanceLine).asset_code === "USDC"
-      ) {
-        usdc = parseFloat(b.balance) || 0;
+      const line = b as unknown as { asset_type?: string; asset_code?: string; balance: string };
+      if (line.asset_type === "native") {
+        xlm = parseFloat(line.balance) || 0;
+      } else if (line.asset_code === "USDC") {
+        usdc = parseFloat(line.balance) || 0;
       }
     }
     return { xlm, usdc };
