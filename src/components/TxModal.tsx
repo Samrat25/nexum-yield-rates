@@ -70,11 +70,11 @@ export function TxModal({ state, onClose, onRetry }: Props) {
 
           {state.status === "success" && (
             <>
-              <CheckCircle2 className="h-12 w-12 text-success" />
-              <p className="text-sm text-muted-foreground">Your rate is locked.</p>
+              <CheckCircle2 className="h-14 w-14 text-success" />
+              <p className="text-base font-medium text-foreground">Your rate is locked.</p>
 
               {state.summary && (
-                <dl className="w-full space-y-2 rounded-md border border-border bg-background/60 p-3 text-left text-sm">
+                <dl className="w-full space-y-3 rounded-lg border border-border/60 bg-background/80 p-4 text-left">
                   <Row label="Principal" value={`${state.summary.amount.toFixed(2)} USDC`} />
                   <Row
                     label="Locked APR"
@@ -95,20 +95,21 @@ export function TxModal({ state, onClose, onRetry }: Props) {
 
               <button
                 onClick={() => copyHash(state.hash)}
-                className="flex w-full items-center justify-between gap-2 rounded-md border border-border bg-background/60 px-3 py-2 text-left transition-colors hover:border-primary/40"
+                className="group flex w-full items-center justify-between gap-3 rounded-lg border border-border/60 bg-background/80 px-3 py-2.5 text-left transition-all hover:border-primary/50 hover:bg-background"
+                title="Click to copy transaction hash"
               >
-                <span className="min-w-0 flex-1 truncate font-mono text-xs text-foreground/70">
+                <span className="min-w-0 flex-1 truncate font-mono text-xs text-foreground/80 group-hover:text-foreground">
                   {state.hash}
                 </span>
                 {copied ? (
                   <Check className="h-4 w-4 shrink-0 text-success" />
                 ) : (
-                  <Copy className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  <Copy className="h-4 w-4 shrink-0 text-muted-foreground group-hover:text-primary" />
                 )}
               </button>
 
-              <div className="mt-1 flex w-full gap-2">
-                <Button asChild variant="outline" className="flex-1 border-border">
+              <div className="mt-2 flex w-full gap-3">
+                <Button asChild variant="outline" className="flex-1 border-border hover:border-primary/50">
                   <Link to="/portfolio" onClick={onClose}>
                     View position
                   </Link>
@@ -150,9 +151,11 @@ export function TxModal({ state, onClose, onRetry }: Props) {
 
 function Row({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
   return (
-    <div className="flex items-center justify-between">
-      <dt className="text-xs uppercase tracking-wider text-muted-foreground">{label}</dt>
-      <dd className={`tabular font-medium ${accent ? "text-success" : ""}`}>{value}</dd>
+    <div className="flex items-center justify-between gap-4">
+      <dt className="text-xs uppercase tracking-wider text-muted-foreground/90">{label}</dt>
+      <dd className={`font-medium tabular ${accent ? "text-success text-base" : "text-foreground"}`}>
+        {value}
+      </dd>
     </div>
   );
 }
