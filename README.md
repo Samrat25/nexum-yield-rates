@@ -1,6 +1,6 @@
 # 🌌 Nexum Protocol — Fixed-Rate Yield & Rate Intent Engine
 
-[![Nexum CI](https://github.com/Samrat25/nexum-yield-rates/actions/workflows/ci.yml/badge.svg)](https://github.com/Samrat25/nexum-yield-rates/actions/workflows/ci.yml)
+[![Nexum CI](https://img.shields.io/github/actions/workflow/status/Samrat25/nexum-yield-rates/ci.yml?branch=main&style=flat-square&logo=github)](https://github.com/Samrat25/nexum-yield-rates/actions/workflows/ci.yml)
 [![Commits](https://img.shields.io/badge/commits-34%2B_passing-brightgreen)](https://github.com/Samrat25/nexum-yield-rates/commits/main)
 [![Live Demo](https://img.shields.io/badge/demo-nexum--yield--rates.vercel.app-blue)](https://nexum-yield-rates.vercel.app/)
 [![Stellar Soroban](https://img.shields.io/badge/blockchain-Stellar_Soroban_Testnet-purple)](https://stellar.org)
