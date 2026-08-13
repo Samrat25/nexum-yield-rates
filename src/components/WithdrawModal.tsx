@@ -204,7 +204,7 @@ export function WithdrawModal({
       onOpenChange={(v) => !v && !isProcessing && onClose()}
     >
       <DialogContent
-        className="bg-surface border-border sm:max-w-lg"
+        className="bg-surface border-border max-w-[calc(100vw-2rem)] sm:max-w-lg p-4 sm:p-6 overflow-hidden"
         onInteractOutside={(e) => isProcessing && e.preventDefault()}
         onEscapeKeyDown={(e) => isProcessing && e.preventDefault()}
       >

@@ -43,7 +43,7 @@ export function TxModal({ state, onClose, onRetry }: Props) {
       onOpenChange={(v) => (!v && state.status !== "pending" ? onClose() : null)}
     >
       <DialogContent
-        className="bg-surface border-border sm:max-w-md"
+        className="bg-surface border-border max-w-[calc(100vw-2rem)] sm:max-w-md p-4 sm:p-6 overflow-hidden"
         onInteractOutside={(e) => state.status === "pending" && e.preventDefault()}
         onEscapeKeyDown={(e) => state.status === "pending" && e.preventDefault()}
       >
