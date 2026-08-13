@@ -95,17 +95,24 @@ export function TxModal({ state, onClose, onRetry }: Props) {
 
               <button
                 onClick={() => copyHash(state.hash)}
-                className="group flex w-full items-center justify-between gap-3 rounded-lg border border-border/60 bg-background/80 px-3 py-2.5 text-left transition-all hover:border-primary/50 hover:bg-background"
-                title="Click to copy transaction hash"
+                className="group flex w-full items-center justify-between gap-3 rounded-lg border border-border/70 bg-background/90 px-3.5 py-2.5 text-left transition-all hover:border-primary/50 hover:bg-background"
+                title="Click to copy full transaction hash"
               >
-                <span className="min-w-0 flex-1 truncate font-mono text-xs text-foreground/80 group-hover:text-foreground">
-                  {state.hash}
+                <span className="block min-w-0 flex-1 truncate font-mono text-xs leading-normal text-foreground/80 group-hover:text-foreground">
+                  {state.hash.length > 24
+                    ? `${state.hash.slice(0, 14)}...${state.hash.slice(-10)}`
+                    : state.hash}
                 </span>
-                {copied ? (
-                  <Check className="h-4 w-4 shrink-0 text-success" />
-                ) : (
-                  <Copy className="h-4 w-4 shrink-0 text-muted-foreground group-hover:text-primary" />
-                )}
+                <span className="flex items-center gap-1.5 shrink-0 text-xs text-muted-foreground group-hover:text-primary">
+                  {copied ? (
+                    <>
+                      <span className="text-success font-sans font-medium text-[11px]">Copied!</span>
+                      <Check className="h-4 w-4 text-success" />
+                    </>
+                  ) : (
+                    <Copy className="h-4 w-4" />
+                  )}
+                </span>
               </button>
 
               <div className="mt-2 flex w-full gap-3">
