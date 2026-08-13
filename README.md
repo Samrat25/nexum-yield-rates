@@ -3,10 +3,17 @@
 > **Production-Ready MVP | Level 4 Green Belt Submission**  
 > *Fixed-rate DeFi intents on Stellar Testnet powered by Soroban smart contracts, Horizon settlement, and LangGraph AI market intelligence.*
 
+[![Live App](https://img.shields.io/badge/Live_App-nexum--yield--rates.vercel.app-brightgreen?style=flat-square&logo=vercel)](https://nexum-yield-rates.vercel.app/)
 [![Stellar Testnet](https://img.shields.io/badge/Stellar-Testnet-blue?style=flat-square&logo=stellar)](https://stellar.org)
 [![Soroban Contracts](https://img.shields.io/badge/Soroban-5%20Contracts-purple?style=flat-square)](https://soroban.stellar.org)
-[![Commits](https://img.shields.io/badge/Commits-32%2B-success?style=flat-square)](https://github.com/Samrat25/nexum-yield-rates/commits/main)
+[![Commits](https://img.shields.io/badge/Commits-34%2B-success?style=flat-square)](https://github.com/Samrat25/nexum-yield-rates/commits/main)
 [![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
+
+---
+
+## 🚀 Live Production URL
+
+🌐 **Production App:** [https://nexum-yield-rates.vercel.app/](https://nexum-yield-rates.vercel.app/)
 
 ---
 
@@ -80,9 +87,10 @@ App will be live at `http://localhost:8081/`.
 ## 🧪 Submission Checklist (Level 4 Green Belt)
 
 - [x] **Production MVP:** Fully functional dApp with real wallet transactions & live yield.
+- [x] **Live Demo Link:** [https://nexum-yield-rates.vercel.app/](https://nexum-yield-rates.vercel.app/)
 - [x] **Public GitHub Repo:** [Samrat25/nexum-yield-rates](https://github.com/Samrat25/nexum-yield-rates)
-- [x] **15+ Commits:** 32+ commits in git history.
-- [x] **Proof of 10+ Wallet Interactions:** Indexed transaction table in submission dossier.
+- [x] **15+ Commits:** 34+ commits in git history.
+- [x] **Proof of 11 Real Wallet Interactions:** Indexed transaction table in submission dossier.
 - [x] **User Feedback Integration:** Incorporated early withdrawal sliders & live yield ticking based on user testing.
 - [x] **Mobile Responsiveness:** Tested and verified across desktop & mobile screen sizes.
 
