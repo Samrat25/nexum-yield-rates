@@ -20,7 +20,7 @@
 | **GitHub Repository** | [https://github.com/Samrat25/nexum-yield-rates](https://github.com/Samrat25/nexum-yield-rates) |
 | **Submission Dossier** | [LEVEL4_SUBMISSION_DOSSIER.md](./LEVEL4_SUBMISSION_DOSSIER.md) |
 | **User Feedback Form** | [Submit Feedback (Google Form)](https://docs.google.com/forms/d/e/1FAIpQLSfg1xXyN3Tl1mVpUG_iJaRIzFKL4XJysjLFMDxcsvLNzLj9Cw/viewform) |
-| **Feedback Response Excel Sheet** | [View Excel Response Sheet (docs/Nexum_User_Feedback_Proof.xlsx)](./docs/Nexum_User_Feedback_Proof.xlsx) |
+| **Public Feedback Responses Sheet** | [View Live Google Sheet Responses](https://docs.google.com/spreadsheets/d/1oKOZ5yhUxCL564EBE_PqY_88krnT2GoH/edit?usp=sharing) \| [Excel Repository File](./docs/Nexum_User_Feedback_Proof.xlsx) |
 | **CI/CD Workflow** | [GitHub Actions](https://github.com/Samrat25/nexum-yield-rates/actions) |
 
 ---
@@ -210,7 +210,8 @@ The demo showcases:
 
 > 📋 **User Feedback Collection & Response Data:**
 > - 📝 **User Feedback Collection Form:** [Submit Feedback via Google Form](https://docs.google.com/forms/d/e/1FAIpQLSfg1xXyN3Tl1mVpUG_iJaRIzFKL4XJysjLFMDxcsvLNzLj9Cw/viewform)
-> - 📊 **Exported Response Excel Sheet:** [View Excel Response Sheet (docs/Nexum_User_Feedback_Proof.xlsx)](./docs/Nexum_User_Feedback_Proof.xlsx)
+> - 📊 **Public Exported Responses Sheet:** [View Public Google Sheet Responses](https://docs.google.com/spreadsheets/d/1oKOZ5yhUxCL564EBE_PqY_88krnT2GoH/edit?usp=sharing)
+> - 📁 **Exported Excel Proof File:** [docs/Nexum_User_Feedback_Proof.xlsx](./docs/Nexum_User_Feedback_Proof.xlsx)
 
 Below is the verified transaction history of **11 real onboarding users** on Stellar Testnet:
 
@@ -242,7 +243,7 @@ Below is the verified transaction history of **11 real onboarding users** on Ste
 | 6 | Demo video link | ✅ [Google Drive Link](https://drive.google.com/file/d/10zfqQTUJqaGkdLJKAppMv7jh1duUYtlu/view?usp=sharing) |
 | 7 | Proof of 10+ user wallet interactions | ✅ 11 real user transactions indexed |
 | 8 | User feedback collection Google Form link | ✅ [Google Form Link](https://docs.google.com/forms/d/e/1FAIpQLSfg1xXyN3Tl1mVpUG_iJaRIzFKL4XJysjLFMDxcsvLNzLj9Cw/viewform) |
-| 9 | Exported Excel user feedback responses sheet | ✅ [Excel Proof Sheet (docs/Nexum_User_Feedback_Proof.xlsx)](./docs/Nexum_User_Feedback_Proof.xlsx) |
+| 9 | Public exported Google Form responses sheet | ✅ [Public Response Sheet Link](https://docs.google.com/spreadsheets/d/1oKOZ5yhUxCL564EBE_PqY_88krnT2GoH/edit?usp=sharing) |
 | 10 | Minimum 15+ meaningful commits | ✅ 34+ commits |
 
 ---
