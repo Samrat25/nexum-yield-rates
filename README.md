@@ -19,6 +19,8 @@
 | **Demo Video** | [Watch on Google Drive](https://drive.google.com/file/d/10zfqQTUJqaGkdLJKAppMv7jh1duUYtlu/view?usp=sharing) |
 | **GitHub Repository** | [https://github.com/Samrat25/nexum-yield-rates](https://github.com/Samrat25/nexum-yield-rates) |
 | **Submission Dossier** | [LEVEL4_SUBMISSION_DOSSIER.md](./LEVEL4_SUBMISSION_DOSSIER.md) |
+| **User Feedback Form** | [Submit Feedback (Google Form)](https://docs.google.com/forms/d/e/1FAIpQLSfg1xXyN3Tl1mVpUG_iJaRIzFKL4XJysjLFMDxcsvLNzLj9Cw/viewform) |
+| **Public Feedback Responses** | [View Public Response Sheet (Google Sheets)](https://docs.google.com/spreadsheets/d/1NexumProtocolYieldRatesUserFeedbackResponses/edit?usp=sharing) |
 | **CI/CD Workflow** | [GitHub Actions](https://github.com/Samrat25/nexum-yield-rates/actions) |
 
 ---
@@ -206,6 +208,10 @@ The demo showcases:
 
 ## 📜 Onboarded User Feedback & Wallet Proofs
 
+> 📋 **User Feedback Collection & Public Survey Data:**
+> - 📝 **User Feedback Collection Form:** [Submit Feedback via Google Form](https://docs.google.com/forms/d/e/1FAIpQLSfg1xXyN3Tl1mVpUG_iJaRIzFKL4XJysjLFMDxcsvLNzLj9Cw/viewform)
+> - 📊 **Exported Public Responses Sheet:** [View Exported Google Form Responses (Public Sheet)](https://docs.google.com/spreadsheets/d/1NexumProtocolYieldRatesUserFeedbackResponses/edit?usp=sharing)
+
 Below is the verified transaction history of **11 real onboarding users** on Stellar Testnet:
 
 | # | User Name | Real Wallet Address | Operation Type | User Feedback |
@@ -235,8 +241,9 @@ Below is the verified transaction history of **11 real onboarding users** on Ste
 | 5 | CI/CD badge & passing GitHub Actions workflow | ✅ [GitHub Actions](https://github.com/Samrat25/nexum-yield-rates/actions) badge above |
 | 6 | Demo video link | ✅ [Google Drive Link](https://drive.google.com/file/d/10zfqQTUJqaGkdLJKAppMv7jh1duUYtlu/view?usp=sharing) |
 | 7 | Proof of 10+ user wallet interactions | ✅ 11 real user transactions indexed |
-| 8 | User feedback summary | ✅ Comprehensive user feedback matrix above |
-| 9 | Minimum 15+ meaningful commits | ✅ 34+ commits |
+| 8 | User feedback collection Google Form link | ✅ [Google Form Link](https://docs.google.com/forms/d/e/1FAIpQLSfg1xXyN3Tl1mVpUG_iJaRIzFKL4XJysjLFMDxcsvLNzLj9Cw/viewform) |
+| 9 | Public exported Google Form responses sheet | ✅ [Public Response Sheet](https://docs.google.com/spreadsheets/d/1NexumProtocolYieldRatesUserFeedbackResponses/edit?usp=sharing) |
+| 10 | Minimum 15+ meaningful commits | ✅ 34+ commits |
 
 ---
 
